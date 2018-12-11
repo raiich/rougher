@@ -90,7 +90,11 @@ function extractStyle(attributes: {[key: string]: string}): Options {
         if (style !== undefined) {
             style.split(';').forEach((c: string) => {
                 const a = c.split(':')
-                options[a[0].trim()] = a[1].trim()
+                if (a === undefined || a[0] === undefined || a[1] === undefined) {
+                    console.error(a)
+                } else {
+                    options[a[0].trim()] = a[1].trim()
+                }
             })
         }
         for (const i in attributes) {
