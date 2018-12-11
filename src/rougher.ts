@@ -65,29 +65,20 @@ function convert(rc: RoughSVG, node: any): SVGGElement {
             )
         case 'polygon':
             break
-        case 'g':
-            const g = tempDocument.createElementNS("http://www.w3.org/2000/svg", "g")
+        default:
+            const g = tempDocument.createElementNS("http://www.w3.org/2000/svg", node.name.toLowerCase())
             const gAttributes = node.attributes
             if (gAttributes !== undefined) {
                 for (const i in gAttributes) {
                     g.setAttribute(i, gAttributes[i])
                 }
             }
-            node.children.map((c: any) => convert(rc, c)).forEach((c: any) => g.appendChild(c))
-            return g
-        case 'text':
-            const elem = tempDocument.createElementNS("http://www.w3.org/2000/svg", "text")
-            const attributes = node.attributes
-            if (attributes !== undefined) {
-                for (const i in attributes) {
-                    elem.setAttribute(i, attributes[i])
-                }
-            }
             if (node.content !== undefined) {
                 const t = tempDocument.createTextNode(node.content)
-                elem.appendChild(t)
+                g.appendChild(t)
             }
-            return elem
+            node.children.map((c: any) => convert(rc, c)).forEach((c: any) => g.appendChild(c))
+            return g
     }
     return tempDocument.createElement(node.name, node.attributes)
 }
