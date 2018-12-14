@@ -12,9 +12,10 @@
     "build": "tsc src/*.ts --outDir dist/"
   },
   "dependencies": {
+    "@types/xml2js": "^0.4.3",
     "jsdom": "^13.0.0",
     "roughjs": "^2.2.5",
-    "xml-parser": "^1.2.1"
+    "xml2js": "^0.4.19"
   },
   "devDependencies": {
     "@types/jsdom": "^12.2.0",

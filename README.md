@@ -5,10 +5,10 @@ CLI tool that applies [rough.js](https://roughjs.com/) ( [GitHub](https://github
 ## Example
 
 Base image:
-<img src="https://github.com/signdoubt/rougher/blob/master/examples/source.svg" />
+<img src="./blob/master/examples/source.svg" />
 
 -> Translated image:
-<img src="https://github.com/signdoubt/rougher/blob/master/examples/translated.svg" />
+<img src="./blob/master/examples/translated.svg" />
 
 
 ## Build and Execution

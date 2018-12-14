@@ -1,90 +1,122 @@
-import {JSDOM } from 'jsdom'
-import {RoughSVG } from "roughjs/bin/svg"
-import {Options} from "roughjs/bin/core";
+import {JSDOM} from 'jsdom'
+import {RoughSVG} from 'roughjs/bin/svg'
+import {Options} from 'roughjs/bin/core'
+import {parseString} from 'xml2js'
 
-const parse = require('xml-parser');
 const rough = require('roughjs')
 const fs = require('fs');
 
 const filename = process.argv[2]
 const dom = new JSDOM()
-const tempDocument = dom.window.document
-const svg = tempDocument.createElementNS("http://www.w3.org/2000/svg", "svg")
-const rc = rough.svg(svg)
+const d = dom.window.document
+const svg = d.createElementNS("http://www.w3.org/2000/svg", "svg")
+const rc: RoughSVG = rough.svg(svg)
 
 fs.readFile(filename, 'utf8', (err: any, text: any) => {
-    const xml = parse(text, 'text/xml')
-    xml.root.children.forEach((n: any) => {
-        svg.appendChild(convert(rc, n))
+    parseString(text, (err: any, result: any) => {
+        const node = result.svg
+
+        for (const i in node) {
+            if (i !== '$') {
+                convertChildNodes(i, node[i]).forEach((cn: SVGElement) => {
+                    svg.appendChild(cn)
+                })
+            }
+        }
+        console.log('<?xml version="1.0" encoding="UTF-8"?>')
+        const tmp = dom.window.document.createElement("div")
+        const attrs = node['$']
+        for (const i in attrs) {
+            svg.setAttribute(i, attrs[i])
+        }
+        tmp.appendChild(svg)
+        console.log(tmp.innerHTML)
     })
-    console.log('<?xml version="1.0" encoding="UTF-8"?>')
-    const tmp = dom.window.document.createElement("div")
-    for (const i in xml.root.attributes) {
-        svg.setAttribute(i, xml.root.attributes[i])
-    }
-    tmp.appendChild(svg);
-    console.log(tmp.innerHTML)
 })
 
-function convert(rc: RoughSVG, node: any): SVGGElement {
-    const options = extractStyle(node.attributes)
-    //const options = {fill: 'red', stroke: 'black'}
-    switch (node.name.toLowerCase()) {
+function convertChildNodes(elementName: string, node: any): SVGElement[] {
+    const a = []
+    for (const i in node) {
+        a.push(convert(elementName, node[i]))
+    }
+    return a
+}
+
+function convertCompound(elementName: string, node: any) {
+    const g: SVGElement = d.createElementNS("http://www.w3.org/2000/svg", elementName)
+    for (const c in node) {
+        if (c === '_') {
+            g.appendChild(d.createTextNode(node['_']))
+        } else if (c === '$') {
+            const attrs = node['$']
+            for (const a in attrs) {
+                g.setAttribute(a, attrs[a])
+            }
+        } else {
+            convertChildNodes(c, node[c]).forEach((cn: SVGElement) => {
+                g.appendChild(cn)
+            })
+        }
+    }
+    return g
+}
+
+function convert(elementName: string, node: any): SVGElement {
+    const options: Options | any = extractStyle(node['$'])
+    const tag = elementName.toLowerCase()
+    switch (tag) {
+        case 'g':
+            return convertCompound(tag, node)
+        case 'text':
+            return convertCompound(tag, node)
+        case 'tspan':
+            return convertCompound(tag, node)
         case 'path':
-            return rc.path(node.attributes['d'], options)
+            return rc.path(options['d'], options)
         case 'line':
             return rc.line(
-                parseFloat(node.attributes['x1']),
-                parseFloat(node.attributes['y1']),
-                parseFloat(node.attributes['x1']),
-                parseFloat(node.attributes['y2']),
+                parseFloat(options['x1']),
+                parseFloat(options['y1']),
+                parseFloat(options['x1']),
+                parseFloat(options['y2']),
                 options
             )
         case 'rect':
             return rc.rectangle(
-                parseFloat(node.attributes['x']),
-                parseFloat(node.attributes['y']),
-                parseFloat(node.attributes['width']),
-                parseFloat(node.attributes['height']),
+                parseFloat(options['x']),
+                parseFloat(options['y']),
+                parseFloat(options['width']),
+                parseFloat(options['height']),
                 options
             )
         case 'ellipse':
             return rc.ellipse(
-                parseFloat(node.attributes['cx']),
-                parseFloat(node.attributes['cy']),
-                parseFloat(node.attributes['rx']),
-                parseFloat(node.attributes['ry']),
+                parseFloat(options['cx']),
+                parseFloat(options['cy']),
+                parseFloat(options['rx']),
+                parseFloat(options['ry']),
                 options
             )
         case 'circle':
             return rc.circle(
-                parseFloat(node.attributes['cx']),
-                parseFloat(node.attributes['cy']),
-                parseFloat(node.attributes['r']),
+                parseFloat(options['cx']),
+                parseFloat(options['cy']),
+                parseFloat(options['r']),
                 options
             )
         case 'polygon':
-            break
+            throw elementName
         default:
-            const g = tempDocument.createElementNS("http://www.w3.org/2000/svg", node.name.toLowerCase())
-            const gAttributes = node.attributes
-            if (gAttributes !== undefined) {
-                for (const i in gAttributes) {
-                    g.setAttribute(i, gAttributes[i])
-                }
-            }
-            if (node.content !== undefined) {
-                const t = tempDocument.createTextNode(node.content)
-                g.appendChild(t)
-            }
-            node.children.map((c: any) => convert(rc, c)).forEach((c: any) => g.appendChild(c))
-            return g
+            throw elementName
     }
-    return tempDocument.createElement(node.name, node.attributes)
 }
 
-function extractStyle(attributes: {[key: string]: string}): Options {
-    const options: {[key: string]: string; } = {}
+function extractStyle(attributes: {[key: string]: string}): any {
+    const options: {[key: string]: any } = {
+        hachureGap: 2.0,
+        fillWeight: 0.6,
+        roughness: 2.0
+    }
     if (attributes !== undefined) {
         const style = attributes['style']
         if (style !== undefined) {
@@ -93,12 +125,18 @@ function extractStyle(attributes: {[key: string]: string}): Options {
                 if (a === undefined || a[0] === undefined || a[1] === undefined) {
                     console.error(a)
                 } else {
-                    options[a[0].trim()] = a[1].trim()
+                    const k = a[0].replace(/[-_](.)/g, function(match, group1) {
+                        return group1.toUpperCase()
+                    })
+                    options[k.trim()] = a[1].trim()
                 }
             })
         }
         for (const i in attributes) {
-            options[i] = attributes[i]
+            const k = i.replace(/[-_](.)/g, function(match, group1) {
+                return group1.toUpperCase()
+            })
+            options[k] = attributes[i]
         }
     }
     return options
