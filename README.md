@@ -1,13 +1,17 @@
 # rougher.js
 
-CLI tool that applies [rough.js](https://roughjs.com/) ( [GitHub](https://github.com/pshihn/rough) ) to existing SVG file and new rough SVG.
+CLI tool that applies [rough.js](https://roughjs.com/) ( [GitHub](https://github.com/pshihn/rough) ) to existing SVG file and generate new rough SVG.
 
 ## Example
 
-Base image:
+#### Base image:
+
 <img src="./examples/source.svg" />
 
--> Translated image:
+#### Translated image:
+
+By using `rougher.js`, the base image above will be converted into the following:
+
 <img src="./examples/translated.svg" />
 
 
